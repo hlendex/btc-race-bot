@@ -14,6 +14,10 @@ Solana), $1,000 paper capital, long only.
   1-minute noise almost never fires it, tight enough to cap the loss on a real
   down day instead of riding buy-and-hold to the bottom.
 - **No re-entry** after the stop fires (re-entry whipsaws in backtest).
+- **Slippage cap:** every order allows at most 50 bps of slippage from the
+  latest close. Fills happen at the next bar's open and ordinary 1-minute
+  moves are ~0.08%, so the cap only binds on a gap or a bad bar; a rejected
+  order is retried on the next batch.
 
 ## Dev-window result (official `grade-local`, frozen 24h dev window)
 

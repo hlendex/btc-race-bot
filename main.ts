@@ -11,9 +11,15 @@
 //     4% is wide enough that ordinary 1-minute noise (stdev ~0.08%/bar, daily
 //     realised vol ~3%) almost never fires it, but it caps the loss on a real
 //     down day instead of riding buy-and-hold to the bottom.
-//   - No re-entry after the stop: re-entering on an EMA cross whipsaws (verified
-//     in backtest: re-entry variants lose to buy-and-hold on bootstrapped windows,
-//     while the no-re-entry 4% stop beats it in 64% of demeaned windows).
+//   - Orders cap slippage at 50 bps from the latest close (MAX_SLIPPAGE_BPS):
+//     fills happen at the next bar's open, and ordinary 1-minute moves are
+//     ~0.08% (stdev), so 50 bps only ever binds on a gap or a bad bar —
+//     and a rejected order is simply retried on the next batch, since the
+//     bot re-attempts entry every batch while flat (and re-attempts the
+//     stop-sell every batch while holding). The first version allowed
+//     10,000 bps (no cap at all); capping it is cheap insurance for the
+//     unseen race window, where a single gap fill could otherwise cost
+//     more than the whole edge the strategy is built on.
 //
 // Dev-window result (official grade-local, exact replay): net PnL +$34.94,
 // max drawdown 1.98%, 1 buy (+ end flatten), fees $0.81. Buy-and-hold on the
@@ -27,7 +33,8 @@ import { BPS, runBars, type BarsState, type OrderInput } from './vendor/makefun-
 
 const ENTRY_BATCH = 24;
 const TRAILING_STOP_BPS = 400n;
-const MAX_SLIPPAGE_BPS = 10_000;
+/** Max slippage vs the latest close, in bps (see header): 50 bps. */
+const MAX_SLIPPAGE_BPS = 50;
 
 /** First batch this run may trade on: 24 bars of history, or the warm-up's end. */
 let entryBatch = ENTRY_BATCH;
